@@ -11,6 +11,10 @@ public class SchedulerSimulator {
 
         Scheduler SRTFScheduler = new ShortestRemainingTimeFirstScheduler();
 
-        SRTFScheduler.schedule();
+//        SRTFScheduler.schedule();
+
+        Scheduler fcaiScheduler = new FCAISheduler();
+
+        fcaiScheduler.schedule();
     }
 }

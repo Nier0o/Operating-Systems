@@ -11,6 +11,10 @@ public class Process implements Comparable<Process> {
     int turnaroundTime = 0;
     int waitingSince;
     double effectiveBurstTime;
+    double fcaiFactor;
+    int quantum;
+    int executionTime = 0;
+    boolean quantum40Done = false;
 
     public Process(String processName, int arrivalTime, int burstTime, int priority, String color)
     {
@@ -23,6 +27,17 @@ public class Process implements Comparable<Process> {
         this.effectiveBurstTime = burstTime;
         this.originalBurstTime = burstTime;
     }
+
+    public void setQuantum(int quantum)
+    {
+        this.quantum = quantum;
+    }
+
+    public void updateFcaiFactor(double V1, double V2)
+    {
+        this.fcaiFactor = (10 - this.priority) + (this.arrivalTime / V1) + (this.burstTime / V2);
+    }
+
 
     // SJF Comparator
     public static final Comparator<Process> SJFComparator = new Comparator<Process>() {
