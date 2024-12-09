@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class NonPreemptiveSJFScheduler implements Scheduler {
+public class ShortestRemainingTimeFirstScheduler implements Scheduler{
     @Override
     public void schedule()
     {
@@ -33,57 +33,72 @@ public class NonPreemptiveSJFScheduler implements Scheduler {
             processes.add(new Process(name, arrivalTime, burstTime, priority, color));
         }
 
-        processes.sort(Process.SJFComparator);
-
         List<Process> executionOrder = new ArrayList<>();
         int currentTime = 0;
         double totalWaitingTime = 0, totalTurnaroundTime = 0;
         boolean isFirst = true;
-        System.out.println("\nExecution Order:");
+        Process lastProcess = null;
 
-        while (!processes.isEmpty()) {
-            List<Process> availableProcesses = new ArrayList<>();
-            for (Process p : processes) {
-                if (p.arrivalTime <= currentTime) {
-                    availableProcesses.add(p);
+        PriorityQueue<Process> readyQueue = new PriorityQueue<>(Process.SJFComparator);
+
+        while(!processes.isEmpty() || !readyQueue.isEmpty())
+        {
+            for(Process p : new ArrayList<>(processes))
+            {
+                if(p.arrivalTime <= currentTime)
+                {
+                    readyQueue.add(p);
+                    processes.remove(p);
                 }
             }
 
-            if (availableProcesses.isEmpty()) {
+            if(readyQueue.isEmpty())
+            {
                 currentTime++;
                 continue;
             }
 
-            if (agingFactor > 0) {
-                for (Process p : availableProcesses) {
-                    int waitingTime = currentTime - p.arrivalTime;
-                    p.effectiveBurstTime = p.burstTime - ((double) waitingTime / agingFactor);
+            if(agingFactor > 0)
+            {
+                for(Process p : readyQueue)
+                {
+                    int waitingTime = currentTime - p.waitingSince;
+                    p.effectiveBurstTime = Math.max(1, p.burstTime - ((double) waitingTime / (double) agingFactor));
                 }
             }
 
-            availableProcesses.sort(Process.SJFComparator);
+            Process currentProcess = readyQueue.poll();
 
-            Process currentProcess = availableProcesses.getFirst();
-
-            processes.remove(currentProcess);
-
-            if (!isFirst) {
+            if(!isFirst && currentProcess != lastProcess)
+            {
                 currentTime += contextSwitch;
+                for(Process p : readyQueue)
+                {
+                    p.waitingSince = Math.max(p.waitingSince, currentTime);
+                }
                 System.out.println("Context Switch");
             }
 
-            System.out.println(currentProcess.processName + " executed from " + currentTime + " to " + (currentTime + currentProcess.burstTime));
-            currentProcess.waitingTime = currentTime - currentProcess.arrivalTime;
-            currentProcess.turnaroundTime = currentProcess.waitingTime + currentProcess.burstTime;
+            System.out.println(currentProcess.processName + " executed at time " + currentTime);
+            currentProcess.burstTime -= 1;
+            currentTime += 1;
+            lastProcess = currentProcess;
 
-            totalWaitingTime += currentProcess.waitingTime;
-            totalTurnaroundTime += currentProcess.turnaroundTime;
+            if (currentProcess.burstTime == 0)
+            {
+                currentProcess.turnaroundTime = currentTime - currentProcess.arrivalTime;
+                currentProcess.waitingTime = currentProcess.turnaroundTime - currentProcess.originalBurstTime;
+                totalWaitingTime += currentProcess.waitingTime;
+                totalTurnaroundTime += currentProcess.turnaroundTime;
+                executionOrder.add(currentProcess);
+            }
+            else
+            {
+                readyQueue.add(currentProcess);
+            }
 
-            currentTime += currentProcess.burstTime;
-            executionOrder.add(currentProcess);
             isFirst = false;
         }
-
         System.out.println("\nMetrics:");
         for (Process p : executionOrder) {
             System.out.println(p.processName + " - Waiting Time: " + p.waitingTime + ", Turnaround Time: " + p.turnaroundTime);

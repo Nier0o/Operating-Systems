@@ -3,6 +3,7 @@ import java.util.*;
 public class Process implements Comparable<Process> {
     String processName;
     int arrivalTime;
+    int originalBurstTime;
     int burstTime;
     int priority;
     String color;
@@ -20,6 +21,7 @@ public class Process implements Comparable<Process> {
         this.color = color;
         this.waitingSince = arrivalTime;
         this.effectiveBurstTime = burstTime;
+        this.originalBurstTime = burstTime;
     }
 
     // SJF Comparator
